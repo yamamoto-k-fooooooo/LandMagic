@@ -4,12 +4,17 @@ using UnityEngine;
 
 public class Card : MonoBehaviour
 {
-    public int cardType { get; private set; }
-    public int cardEffect { get; private set; }
-
-    public Card(int type, int effect)
+    public class CardInfo
     {
-        cardType = type;
-        cardEffect = effect;
+        //F
+        public int cardType { get; private set; }
+        //Œø‰Ê
+        public int cardEffect { get; private set; }
+
+        public CardInfo(int type, int effect)
+        {
+            cardType = type;
+            cardEffect = effect;
+        }
     }
 }
