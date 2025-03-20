@@ -70,7 +70,7 @@ public class CardGameManager : MonoBehaviour
             deckList.Add(card);
         }
     }
-    void Shuffle()
+    void DeckShuffle()
     {
         deckList = deckList.OrderBy(a => Guid.NewGuid()).ToList();
 
@@ -96,7 +96,7 @@ public class CardGameManager : MonoBehaviour
             var cardObject = Hoge(card);
             handList.Add(card);
 
-            codeHandManager.DrawCardDisplay(cardObject, handList.Count);
+            codeHandManager.AddCardToHand(cardObject, handList.Count);
         }
 
 
@@ -119,7 +119,7 @@ public class CardGameManager : MonoBehaviour
             }
             handList.Clear();
         }
-        Shuffle();
+        DeckShuffle();
         Draw(drawNum);
     }
 
@@ -151,5 +151,11 @@ public class CardGameManager : MonoBehaviour
         }
 
         return makingCard;
+    }
+
+    //èD•\¦‚ğXV
+    public void HandLayoutCalclate()
+    {
+        codeHandManager.HandLayoutCalclate(handList.Count);
     }
 }

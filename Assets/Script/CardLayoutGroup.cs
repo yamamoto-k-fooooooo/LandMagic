@@ -136,13 +136,19 @@ public class CardLayoutGroup : LayoutGroup
     [Range(-180f, 180f)]
     private float endRotation;
 
-    private void Calclate()
+    public void Calclate()
     {
         m_Tracker.Clear();
-        var childs = this.transform.GetComponentsInChildren<RectTransform>()
-            .Where(x => this.gameObject != x.gameObject)
-            .Where(x => x.gameObject.activeSelf)
-            .ToList();
+
+        List<GameObject> childrenList = GetChildrenWithoutGrandchildren();
+        List<RectTransform> childs = new List<RectTransform>();
+
+        foreach(var child in childrenList)
+        {
+            childs.Add(child.GetComponent<RectTransform>());
+        }
+        childrenList.Clear();
+
         var childCount = childs.Count;
         if (childCount == 0) return;
 
@@ -193,9 +199,24 @@ public class CardLayoutGroup : LayoutGroup
             }
             child.anchorMin = child.anchorMax = child.pivot = new Vector2(0.5f, 0.5f);
         }
+        childs.Clear();
     }
 
-    protected override void OnEnable() { base.OnEnable(); Calclate(); }
+    public List<GameObject> GetChildrenWithoutGrandchildren()
+    {
+        var result = new List<GameObject>();
+        foreach (Transform n in this.gameObject.transform)
+        {
+            result.Add(n.gameObject);
+        }
+        return result;
+    }
+
+    protected override void OnEnable()
+    { 
+        base.OnEnable();
+        Calclate(); 
+    }
     public override void SetLayoutHorizontal()
     {
     }
@@ -204,11 +225,11 @@ public class CardLayoutGroup : LayoutGroup
     }
     public override void CalculateLayoutInputVertical()
     {
-        Calclate();
+        //Calclate();
     }
     public override void CalculateLayoutInputHorizontal()
     {
-        Calclate();
+        //Calclate();
     }
 #if UNITY_EDITOR
     protected override void OnValidate()
