@@ -89,6 +89,7 @@ public class CardLayoutGroup : LayoutGroup
     /// <summary>
     /// 要素を配置する際の始点のオイラー角
     /// </summary>
+    [SerializeField]
     [Range(0f, 360f)]
     public float startAngle;
 
@@ -104,6 +105,7 @@ public class CardLayoutGroup : LayoutGroup
     /// 要素を配置する際の終点のオイラー角
     /// </summary>
     [Range(0f, 360f)]
+    [HideInInspector]
     public float endAngle;
 
     /// <summary>
@@ -116,7 +118,6 @@ public class CardLayoutGroup : LayoutGroup
     /// <summary>
     /// 要素を回転させる場合のRotationの始点
     /// </summary>
-    [SerializeField]
     [HideInInspector]
     [Range(-180f, 180f)]
     private float startRotation;
@@ -131,7 +132,6 @@ public class CardLayoutGroup : LayoutGroup
     /// <summary>
     /// 要素を回転させる場合のRotationの終点
     /// </summary>
-    [SerializeField]
     [HideInInspector]
     [Range(-180f, 180f)]
     private float endRotation;

@@ -25,29 +25,20 @@ public class CardGameManager : MonoBehaviour
     //デッキ枚数
     const int deckNum = 25;
 
-    //手札
-    List<Card.CardInfo> handList = new List<Card.CardInfo>();
-
-    void Start()
+    private void Awake()
     {
         codeHandManager = GetComponent<HandManager>();
-
+    }
+    void Start()
+    {
         //デッキを生成
         CreateDeck();
         //4枚を手札にする
         shuffleAndDraw(4);
 
-        foreach (Card.CardInfo card in handList)
-        {
-            Debug.Log($"手札 : {card.cardType}");
-        }
-        foreach (Card.CardInfo card in deckList)
-        {
-            Debug.Log($"デッキ : {card.cardType}");
-        }
-
         //マリガン
         //UIを表示してy/nで確認する
+        //shuffleAndDraw(4, true);
     }
 
     private void Update()
@@ -93,12 +84,10 @@ public class CardGameManager : MonoBehaviour
             card = deckList[count];
 
             //引いたカード情報をオブジェクトにする
-            var cardObject = Hoge(card);
-            handList.Add(card);
+            var cardObject = CardInstantiate(card);
 
-            codeHandManager.AddCardToHand(cardObject, handList.Count);
+            codeHandManager.AddCardToHand(card, cardObject);
         }
-
 
         for (int count = 0; count < drawNum; count++)
         {
@@ -112,19 +101,23 @@ public class CardGameManager : MonoBehaviour
         //引き直す場合
         if (handBack)
         {
+            var handList = codeHandManager.GetHandList();
             for(int count = 0; count < handList.Count; count++)
             {
                 Card.CardInfo card = handList[count];
                 deckList.Add(card);
             }
             handList.Clear();
+
+            //手札をデッキに戻す演出
+
         }
         DeckShuffle();
         Draw(drawNum);
     }
 
     //カード情報を受け取り、オブジェクトとして返す
-    public GameObject Hoge(Card.CardInfo cardInfo)
+    public GameObject CardInstantiate(Card.CardInfo cardInfo)
     {
         GameObject makingCard = Instantiate(cardPrefab, Vector3.zero, Quaternion.identity);
 
@@ -151,11 +144,5 @@ public class CardGameManager : MonoBehaviour
         }
 
         return makingCard;
-    }
-
-    //手札表示を更新
-    public void HandLayoutCalclate()
-    {
-        codeHandManager.HandLayoutCalclate(handList.Count);
     }
 }
