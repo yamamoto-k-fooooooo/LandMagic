@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHandler
@@ -28,6 +29,8 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
     //手札の何番目にあるか
     int handNum = 0;
 
+    bool playedBool = false;
+
     public void Initialization()
     {
         cardLocalScale = transform.localScale;
@@ -40,10 +43,19 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
     //カーソルが合うと最前面、大きく表示する
     void CardBigDisplay()
     {
-        if (codeHandManager.draggingBool)
+        if (playedBool || transform.localScale != cardLocalScale)
         {
             return;
         }
+        //既に他のカードが拡大表示されている
+        if(codeHandManager.bigDisplayHandObject != null && codeHandManager.bigDisplayHandObject != gameObject)
+        {
+            if (codeHandManager.draggingBool)
+            {
+                return;
+            }
+        }
+
         handNum = gameObject.transform.GetSiblingIndex();
         //最前列へ
         transform.SetAsLastSibling();
@@ -61,35 +73,65 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
             cardLocalScale.y * 1.5f,
             cardLocalScale.z
            );
+
+        codeHandManager.bigDisplayHandObject = gameObject;
     }
     //EventTrigger > PointerExitで呼ぶ
     //カーソルが外れると表示を戻す
-    void CardRevertDisplay()
+    public void CardRevertDisplay()
     {
-        if (codeHandManager.draggingBool)
+        if (codeHandManager.draggingBool || playedBool)
         {
             return;
         }
+        RevertDisplay();
+        codeHandManager.HandLayoutCalclate();
+    }
+    public void RevertDisplay()
+    {
         transform.SetSiblingIndex(handNum);
         transform.localScale = cardLocalScale;
-        codeHandManager.HandLayoutCalclate();
+        codeHandManager.bigDisplayHandObject = null;
     }
 
     // ドラッグ中の処理
     public void OnDrag(PointerEventData eventData)
     {
+        if (playedBool)
+        {
+            return;
+        }
+
+        //拡大表示
+        if (codeHandManager.bigDisplayHandObject != null)
+        {
+            //他に拡大表示している手札がある場合は戻す
+            if (codeHandManager.bigDisplayHandObject != gameObject)
+            {
+                codeHandManager.HandObjectRevertDisplay();
+                CardBigDisplay();
+            }
+        }
+        else
+        {
+            CardBigDisplay();
+        }
+
         // eventData.positionから、親に従うlocalPositionへの変換を行う
         // オブジェクトの位置をlocalPositionに変更する
         Vector2 localPosition = GetLocalPosition(eventData.position);
         codeRectTransform.anchoredPosition = localPosition;
 
-        //プレイゾーンにある時はフレームの色を変える
-        //if (codeHandManager.InPlayArea(localPosition.y))
-        //{
+        //プレイゾーンにあるか
+        if (codeHandManager.InPlayArea(localPosition.y))
+        {
 
-        //}
-        //手札入れ替え
-        handNum = codeHandManager.HandSwapCheck(localPosition.x, handNum);
+        }
+        else
+        {
+            //手札並び替えチェック
+            handNum = codeHandManager.HandSwapCheck(localPosition.x, handNum);
+        }
     }
     // ScreenPositionからlocalPositionへの変換関数
     private Vector2 GetLocalPosition(Vector2 screenPosition)
@@ -105,8 +147,25 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
     // ドラッグ終了時の処理
     public void OnEndDrag(PointerEventData eventData)
     {
+        if (playedBool)
+        {
+            return;
+        }
         codeHandManager.draggingBool = false;
-        CardRevertDisplay();       
+
+        // eventData.positionから、親に従うlocalPositionへの変換を行う
+        // オブジェクトの位置をlocalPositionに変更する
+        Vector2 localPosition = GetLocalPosition(eventData.position);
+
+        //プレイゾーンに出したか
+        if (codeHandManager.InPlayArea(localPosition.y))
+        {
+            playedBool = true;
+            codeHandManager.CardPlay(handNum);
+            return;
+        }
+
+        CardRevertDisplay();
     }
 
     public void OnBeginDrag(PointerEventData eventData)

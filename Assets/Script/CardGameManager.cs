@@ -19,11 +19,26 @@ public class CardGameManager : MonoBehaviour
     }
 
     [SerializeField] GameObject cardPrefab;
+    [SerializeField] GameObject[] ColorArea;
+    [SerializeField] GameObject StageCardObject;
 
     //デッキ
     List<Card.CardInfo> deckList = new List<Card.CardInfo>();
     //デッキ枚数
     const int deckNum = 25;
+
+    /// <summary>
+    /// 自分の場に出ているカードの数
+    /// CardType, 数
+    /// </summary>
+    Dictionary<int, int> MyFieldCardNum = new Dictionary<int, int>()
+    {
+        { 0,0 },
+        { 1,0 },
+        { 2,0 },
+        { 3,0 },
+        { 4,0 }
+    };
 
     private void Awake()
     {
@@ -64,11 +79,6 @@ public class CardGameManager : MonoBehaviour
     void DeckShuffle()
     {
         deckList = deckList.OrderBy(a => Guid.NewGuid()).ToList();
-
-        foreach(Card.CardInfo card in deckList)
-        {
-            Debug.Log($"{card.cardType}");
-        }
     }
 
     void Draw(int drawNum)
@@ -122,27 +132,81 @@ public class CardGameManager : MonoBehaviour
         GameObject makingCard = Instantiate(cardPrefab, Vector3.zero, Quaternion.identity);
 
         Image image = makingCard.GetComponent<Image>();
-
+        string name = "";
         //色を変更
         switch (cardInfo.cardType)
         {
             case (int)CardType.white:
                 image.color = new Color(1, 1, 150/255f, 1);
+                name = "_white";
                 break;
             case (int)CardType.blue:
                 image.color = new Color(100/255f, 1, 1, 1);
+                name = "_blue";
                 break;
             case (int)CardType.black:
                 image.color = new Color(135/255f, 135/255f, 135/255f, 1);
+                name = "_black";
                 break;
             case (int)CardType.red:
                 image.color = new Color(1, 100/255f, 100/255f, 1);
+                name = "_red";
                 break;
             case (int)CardType.green:
                 image.color = new Color(100/255f, 1, 100/255f, 1);
+                name = "_green";
                 break;
         }
+        makingCard.name += name;
 
         return makingCard;
+    }
+
+    public void CardPlay(Card.CardInfo card)
+    {
+        //色を取得
+        int color = card.cardType;
+        //出現させるpositionを取得
+        Vector3 position = Vector3.zero;
+
+        GameObject parentObject = ColorArea[color];
+
+        //出現オブジェクトを生成
+        var stageCardObject = Instantiate(StageCardObject, Vector3.one, Quaternion.identity, parentObject.transform);
+        stageCardObject.transform.localPosition = Vector3.zero;
+        //大きさ調整
+        var localScale = stageCardObject.transform.localScale;
+        var parentLossyScale = stageCardObject.transform.parent.lossyScale;
+        stageCardObject.transform.localScale
+            = new Vector3(
+                localScale.x / parentLossyScale.x,
+                localScale.y / parentLossyScale.y,
+                localScale.z / parentLossyScale.z);
+
+
+        //出現演出するならこの箇所？
+
+
+        //場のカードとして加算
+        MyFieldCardNum[color]++;
+        //勝利条件を満たしているか
+        int winCount = 0;
+        for(int colorType = 0;colorType < MyFieldCardNum.Count; colorType++)
+        {
+            if(MyFieldCardNum[colorType] > 0)
+            {
+                winCount++;
+            }
+            else
+            {
+                break;
+            }
+        }
+        if(winCount >= 5)
+        {
+            //勝利
+            Debug.Log("勝利");
+            return;
+        }
     }
 }
