@@ -159,15 +159,17 @@ public class HandManager : MonoBehaviour
     {
         return codeCardGameManager.selectingBool;
     }
-    public void SelectedHandObject(int cardId)
+    public bool SelectedHandObject(int cardId)
     {
         if (codeCardGameManager.selectedCardIdHash.Contains(cardId))
         {
             codeCardGameManager.selectedCardIdHash.Remove(cardId);
+            return false;
         }
         else
         {
             codeCardGameManager.selectedCardIdHash.Add(cardId);
+            return true;
         }
     }
 

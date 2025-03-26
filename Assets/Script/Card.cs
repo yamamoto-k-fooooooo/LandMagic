@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-
+using DG.Tweening;
 
 public class CardInfo
 {
@@ -32,6 +32,7 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
     HandManager codeHandManager;
     RectTransform codeRectTransform;
     RectTransform codeCardLayoutRectTransform;
+    [SerializeField] Image codeImage;
 
     //手札の何番目にあるか
     int handNum = 0;
@@ -190,8 +191,18 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
     {
         if (codeHandManager.IsSelecting() && !codeHandManager.draggingBool)
         {
-            Debug.Log("selected, " + codeCardInfo.id);
-            codeHandManager.SelectedHandObject(codeCardInfo.id);
+            //フェードさせる
+            if (codeHandManager.SelectedHandObject(codeCardInfo.id))
+            {
+                codeImage.DOFade(0.7f, 0.5f).SetLoops(-1, LoopType.Yoyo);
+            }
+            //フェードを戻す
+            else
+            {
+                codeImage.DOKill();
+                var color = codeImage.color;
+                codeImage.color = new Color(color.r, color.g, color.b, 1);
+            }
         }
     }
 }
