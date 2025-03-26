@@ -4,21 +4,28 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+
+public class CardInfo
+{
+    //ID
+    public int id { get; private set; }
+    //色
+    public int cardType { get; private set; }
+    //効果
+    public int cardEffect { get; private set; }
+
+    public CardInfo(int id, int type, int effect)
+    {
+        this.id = id;
+        cardType = type;
+        cardEffect = effect;
+    }
+}
 public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHandler
 {
-    public class CardInfo
-    {
-        //色
-        public int cardType { get; private set; }
-        //効果
-        public int cardEffect { get; private set; }
+    //カード情報
+    CardInfo codeCardInfo;
 
-        public CardInfo(int type, int effect)
-        {
-            cardType = type;
-            cardEffect = effect;
-        }
-    }
     //大きさ
     Vector3 cardLocalScale;
 
@@ -31,9 +38,10 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
 
     bool playedBool = false;
 
-    public void Initialization()
+    public void Initialization(CardInfo card)
     {
         cardLocalScale = transform.localScale;
+        codeCardInfo = card;
         codeHandManager = GameObject.Find("CardGameManager").GetComponent<HandManager>();
         codeRectTransform = GetComponent<RectTransform>();
         codeCardLayoutRectTransform = codeRectTransform.parent as RectTransform;
@@ -161,7 +169,7 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
         if (codeHandManager.InPlayArea(localPosition.y))
         {
             playedBool = true;
-            codeHandManager.CardPlay(handNum);
+            codeHandManager.CardPlay(codeCardInfo.id);
             return;
         }
 

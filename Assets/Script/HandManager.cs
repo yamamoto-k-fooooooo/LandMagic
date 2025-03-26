@@ -11,9 +11,12 @@ public class HandManager : MonoBehaviour
     RectTransform codeHandAreaRectTransform;
 
     //手札
-    List<Card.CardInfo> handList = new List<Card.CardInfo>();
+    //List<Card.CardInfo> handList = new List<Card.CardInfo>();
+    Dictionary<int, CardInfo> handDict = new Dictionary<int, CardInfo>();
+
     //手札オブジェクト
-    public List<GameObject> handCardObjectList = new List<GameObject>();
+    //public List<GameObject> handCardObjectList = new List<GameObject>();
+    Dictionary<int, GameObject> handCardObjectDict = new Dictionary<int, GameObject>();
     /// <summary>
     /// 手札枚数毎のカードそれぞれのpositionとrotationのキャッシュ
     /// 手札枚数、左から〇番目のカード、positionとrotation
@@ -43,29 +46,31 @@ public class HandManager : MonoBehaviour
         codeHandAreaRectTransform = HandArea.GetComponent<RectTransform>();
     }
 
-    public List<Card.CardInfo> GetHandList()
+    public Dictionary<int, CardInfo> GetHandDict()
     {
-        return handList;
+        return handDict;
     }
 
-    public void AddCardToHand(Card.CardInfo card, GameObject cardObject)
+    public void AddCardToHand(CardInfo card, GameObject cardObject)
     {
-        handList.Add(card);
-        handCardObjectList.Add(cardObject);
-        cardObject.transform.name += $"_{handCardObjectList.Count}";
+        handDict.Add(card.id, card);
+        handCardObjectDict.Add(card.id, cardObject);
+        cardObject.transform.name += $"_{handCardObjectDict.Count}";
 
         cardObject.transform.parent = CardLayout.transform;
-        cardObject.GetComponent<Card>().Initialization();
+        cardObject.GetComponent<Card>().Initialization(card);
         //手札表示を整える
         HandLayoutCalclate();
-        if (!handNumLocalPosRotCache.ContainsKey(handCardObjectList.Count))
+        if (!handNumLocalPosRotCache.ContainsKey(handCardObjectDict.Count))
         {
+            List<GameObject> handObjectList = codeCardLayoutGroup.GetChildrenWithoutGrandchildren();
             Dictionary<int, pos_rot> dict = new Dictionary<int, pos_rot>();
-            for(int count = 0; count < handCardObjectList.Count; count++)
+            for(int count = 0; count < handObjectList.Count; count++)
             {
-                dict.Add(count, new pos_rot(handCardObjectList[count].transform.localPosition, handCardObjectList[count].transform.localRotation));
-            }
-            handNumLocalPosRotCache.Add(handCardObjectList.Count, dict);
+                dict.Add(count, new pos_rot(handObjectList[count].transform.localPosition, handObjectList[count].transform.localRotation));
+            }          
+
+            handNumLocalPosRotCache.Add(handCardObjectDict.Count, dict);
         }
     }
 
@@ -73,7 +78,7 @@ public class HandManager : MonoBehaviour
     //手札の表示を更新
     public void HandLayoutCalclate()
     {
-        int handNum = handList.Count;
+        int handNum = handDict.Count;
         //手札が6枚以下の場合は扇形に広げるようにする
         if (handNum <= 6)
         {
@@ -103,34 +108,28 @@ public class HandManager : MonoBehaviour
         //左隣チェック
         if(0 < cardNum)
         {
-            float leftCardPositionX = handNumLocalPosRotCache[handCardObjectList.Count][cardNum - 1].position.x;
+            float leftCardPositionX = handNumLocalPosRotCache[handCardObjectDict.Count][cardNum - 1].position.x;
             if (vectorX < leftCardPositionX)
             {
                 //左にあったカードを右へ移動
-                var leftCard = handCardObjectList[cardNum - 1];
-                leftCard.transform.localPosition = handNumLocalPosRotCache[handCardObjectList.Count][cardNum].position;
-                leftCard.transform.localRotation = handNumLocalPosRotCache[handCardObjectList.Count][cardNum].rotation;
-                //list内も並び替え
-                handCardObjectList.Replace(cardNum, cardNum - 1);
-                handList.Replace(cardNum, cardNum - 1);
+                Transform leftCard = CardLayout.transform.GetChild(cardNum - 1);
+                leftCard.localPosition = handNumLocalPosRotCache[handCardObjectDict.Count][cardNum].position;
+                leftCard.localRotation = handNumLocalPosRotCache[handCardObjectDict.Count][cardNum].rotation;
 
                 //HandNumを更新
                 return cardNum - 1;
             }
         }
         //右隣チェック
-        if(cardNum < handCardObjectList.Count - 1)
+        if(cardNum < handCardObjectDict.Count - 1)
         {
-            float rightCardPositionX = handNumLocalPosRotCache[handCardObjectList.Count][cardNum + 1].position.x;
+            float rightCardPositionX = handNumLocalPosRotCache[handCardObjectDict.Count][cardNum + 1].position.x;
             if (vectorX > rightCardPositionX)
             {
                 //右にあったカードを左へ移動
-                var rightCard = handCardObjectList[cardNum + 1];
-                rightCard.transform.localPosition = handNumLocalPosRotCache[handCardObjectList.Count][cardNum].position;
-                rightCard.transform.localRotation = handNumLocalPosRotCache[handCardObjectList.Count][cardNum].rotation;
-                //list内も並び替え
-                handCardObjectList.Replace(cardNum, cardNum + 1);
-                handList.Replace(cardNum, cardNum + 1);
+                Transform rightCard = CardLayout.transform.GetChild(cardNum);
+                rightCard.localPosition = handNumLocalPosRotCache[handCardObjectDict.Count][cardNum].position;
+                rightCard.localRotation = handNumLocalPosRotCache[handCardObjectDict.Count][cardNum].rotation;
 
                 //HandNumを更新
                 return cardNum + 1;
@@ -150,36 +149,18 @@ public class HandManager : MonoBehaviour
 
     public void CardPlay(int cardNum)
     {
-        Card.CardInfo card = handList[cardNum];
-        handList.RemoveAt(cardNum);
+        CardInfo card = handDict[cardNum];
+        handDict.Remove(card.id);
 
-        var cardObject = handCardObjectList[cardNum];
+        GameObject cardObject = handCardObjectDict[cardNum];
         cardObject.transform.parent = HandArea.transform;
-        handCardObjectList.RemoveAt(cardNum);
+        handCardObjectDict.Remove(cardNum);
 
         //演出
         Destroy(cardObject);
 
         codeCardGameManager.CardPlay(card);
         HandLayoutCalclate();
-    }
-}
-
-public static class ListUtil
-{
-    /// <summary>
-    /// Replace Index1 and index2
-    /// </summary>
-    public static void Replace<T>(this IList<T> self, int index1, int index2)
-    {
-        if (self.Count <= index1 || self.Count <= index2 || index1 == index2)
-        {
-            return;
-        }
-
-        var cache = self[index1];
-        self[index1] = self[index2];
-        self[index2] = cache;
     }
 }
 

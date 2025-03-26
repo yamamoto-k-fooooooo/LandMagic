@@ -23,7 +23,7 @@ public class CardGameManager : MonoBehaviour
     [SerializeField] GameObject StageCardObject;
 
     //デッキ
-    List<Card.CardInfo> deckList = new List<Card.CardInfo>();
+    List<CardInfo> deckList = new List<CardInfo>();
     //デッキ枚数
     const int deckNum = 25;
 
@@ -72,7 +72,7 @@ public class CardGameManager : MonoBehaviour
         {
 
             int cardType = count % 5;
-            Card.CardInfo card = new Card.CardInfo(cardType, 0);
+            CardInfo card = new CardInfo(count, cardType, 0);
             deckList.Add(card);
         }
     }
@@ -88,21 +88,18 @@ public class CardGameManager : MonoBehaviour
             return;
         }
 
-        Card.CardInfo card = null;
+        CardInfo card = null;
         for (int count = 0; count < drawNum; count++)
         {
             card = deckList[count];
 
             //引いたカード情報をオブジェクトにする
-            var cardObject = CardInstantiate(card);
+            GameObject cardObject = CardInstantiate(card);
 
             codeHandManager.AddCardToHand(card, cardObject);
         }
 
-        for (int count = 0; count < drawNum; count++)
-        {
-            deckList.RemoveAt(count);
-        }
+        deckList.RemoveRange(0, drawNum);
     }
 
     //シャッフルして引く or 引き直す
@@ -111,13 +108,13 @@ public class CardGameManager : MonoBehaviour
         //引き直す場合
         if (handBack)
         {
-            var handList = codeHandManager.GetHandList();
-            for(int count = 0; count < handList.Count; count++)
+            var handDict = codeHandManager.GetHandDict();
+            for(int count = 0; count < handDict.Count; count++)
             {
-                Card.CardInfo card = handList[count];
+                CardInfo card = handDict[count];
                 deckList.Add(card);
             }
-            handList.Clear();
+            handDict.Clear();
 
             //手札をデッキに戻す演出
 
@@ -127,7 +124,7 @@ public class CardGameManager : MonoBehaviour
     }
 
     //カード情報を受け取り、オブジェクトとして返す
-    public GameObject CardInstantiate(Card.CardInfo cardInfo)
+    public GameObject CardInstantiate(CardInfo cardInfo)
     {
         GameObject makingCard = Instantiate(cardPrefab, Vector3.zero, Quaternion.identity);
 
@@ -162,7 +159,7 @@ public class CardGameManager : MonoBehaviour
         return makingCard;
     }
 
-    public void CardPlay(Card.CardInfo card)
+    public void CardPlay(CardInfo card)
     {
         //色を取得
         int color = card.cardType;
