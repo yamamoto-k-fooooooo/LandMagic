@@ -7,7 +7,10 @@ using System.Linq;
 
 public class CardGameManager : MonoBehaviour
 {
-    HandManager codeHandManager;
+    [SerializeField] HandManager codeHandManager;
+    [SerializeField] GameObject SelectCheckButton;
+    [SerializeField] SelectCheckButton codeSelectCheckButton;
+    [SerializeField] TrashManager codeTrashManager;
 
     public enum CardType
     {
@@ -18,9 +21,10 @@ public class CardGameManager : MonoBehaviour
         green
     }
 
-    [SerializeField] GameObject cardPrefab;
+    [SerializeField] GameObject handCardObject;
     [SerializeField] GameObject[] ColorArea;
-    [SerializeField] GameObject StageCardObject;
+    [SerializeField] GameObject stageCardObject;
+    [SerializeField] Material[] colorMaterial;
 
     //デッキ
     List<CardInfo> deckList = new List<CardInfo>();
@@ -39,6 +43,8 @@ public class CardGameManager : MonoBehaviour
         { 3,0 },
         { 4,0 }
     };
+    public bool selectingBool = false;
+    public HashSet<int> selectedCardIdHash = new HashSet<int>();
 
     private void Awake()
     {
@@ -94,9 +100,9 @@ public class CardGameManager : MonoBehaviour
             card = deckList[count];
 
             //引いたカード情報をオブジェクトにする
-            GameObject cardObject = CardInstantiate(card);
+            GameObject handObject = HandObjectInstantiate(card);
 
-            codeHandManager.AddCardToHand(card, cardObject);
+            codeHandManager.AddCardToHand(card, handObject);
         }
 
         deckList.RemoveRange(0, drawNum);
@@ -124,9 +130,9 @@ public class CardGameManager : MonoBehaviour
     }
 
     //カード情報を受け取り、オブジェクトとして返す
-    public GameObject CardInstantiate(CardInfo cardInfo)
+    public GameObject HandObjectInstantiate(CardInfo cardInfo)
     {
-        GameObject makingCard = Instantiate(cardPrefab, Vector3.zero, Quaternion.identity);
+        GameObject makingCard = Instantiate(handCardObject, Vector3.zero, Quaternion.identity);
 
         Image image = makingCard.GetComponent<Image>();
         string name = "";
@@ -158,18 +164,58 @@ public class CardGameManager : MonoBehaviour
 
         return makingCard;
     }
+    //カード情報を受け取り、オブジェクトとして返す
+    public GameObject StageObjectInstantiate(CardInfo cardInfo, GameObject parent = null)
+    {
+        GameObject makingCard;
+        if (parent == null)
+        {
+            makingCard = Instantiate(stageCardObject, Vector3.zero, Quaternion.identity);
+        }
+        else
+        {
+            makingCard = Instantiate(stageCardObject, Vector3.zero, Quaternion.identity, parent.transform);
+        }
+
+        makingCard.GetComponent<MeshRenderer>().material = colorMaterial[cardInfo.cardType];
+
+#if DEBUG
+        string name = "";
+        //色を変更
+        switch (cardInfo.cardType)
+        {
+            case (int)CardType.white:
+                name = "_white";
+                break;
+            case (int)CardType.blue:
+                name = "_blue";
+                break;
+            case (int)CardType.black:
+                name = "_black";
+                break;
+            case (int)CardType.red:
+                name = "_red";
+                break;
+            case (int)CardType.green:
+                name = "_green";
+                break;
+        }
+        makingCard.name += name;
+#endif
+
+        return makingCard;
+    }
 
     public void CardPlay(CardInfo card)
     {
         //色を取得
         int color = card.cardType;
-        //出現させるpositionを取得
-        Vector3 position = Vector3.zero;
 
         GameObject parentObject = ColorArea[color];
-
         //出現オブジェクトを生成
-        var stageCardObject = Instantiate(StageCardObject, Vector3.one, Quaternion.identity, parentObject.transform);
+        //var stageCardObject = Instantiate(this.stageCardObject, Vector3.one, Quaternion.identity, parentObject.transform);
+        var stageCardObject = StageObjectInstantiate(card, parentObject);
+
         stageCardObject.transform.localPosition = Vector3.zero;
         //大きさ調整
         var localScale = stageCardObject.transform.localScale;
@@ -205,5 +251,66 @@ public class CardGameManager : MonoBehaviour
             Debug.Log("勝利");
             return;
         }
+        //場に出た時の効果
+        DoCardEffect(color);
+    }
+
+    void DoCardEffect(int color)
+    {
+        switch (color)
+        {
+            //サルベージ
+            case (int)CardType.white:
+                break;
+            //ハンデス
+            case (int)CardType.black:
+                DiscardHand(1);
+                break;
+            //除去
+            case (int)CardType.red:
+                break;
+            //ドロー
+            case (int)CardType.green:
+                Draw(1);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 指定枚数分を選択されるまで待機
+    /// </summary>
+    /// <param name="num"></param>
+    /// <returns></returns>
+    public IEnumerator SelectCheck(int num)
+    {
+        codeSelectCheckButton.SelectNumSet(num);
+
+        selectingBool = true;
+        while (selectingBool)
+        {
+            //〇枚選ぶ
+            yield return null;
+        }
+    }
+    //SelectCheckButtonから呼ばれる
+    public void SelectComplete()
+    {
+        selectingBool = false;
+        SelectCheckButton.SetActive(false);
+    }
+    public void SelectedHashClear()
+    {
+        selectedCardIdHash.Clear();
+    }
+
+    void DiscardHand(int num)
+    {
+        StartCoroutine(codeHandManager.DiscardHand(num));
+    }
+
+    public void GotoTrash(CardInfo card)
+    {
+        var cardObject = StageObjectInstantiate(card);
+        codeTrashManager.AddCardToTrash(card, cardObject);
     }
 }

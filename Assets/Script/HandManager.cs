@@ -4,18 +4,15 @@ using UnityEngine;
 
 public class HandManager : MonoBehaviour
 {
-    CardGameManager codeCardGameManager;
+    [SerializeField] CardGameManager codeCardGameManager;
     [SerializeField] GameObject CardLayout;
-    CardLayoutGroup codeCardLayoutGroup;
-    [SerializeField] GameObject HandArea;
-    RectTransform codeHandAreaRectTransform;
+    [SerializeField] CardLayoutGroup codeCardLayoutGroup;
+    [SerializeField] RectTransform codeHandAreaRectTransform;
 
     //手札
-    //List<Card.CardInfo> handList = new List<Card.CardInfo>();
     Dictionary<int, CardInfo> handDict = new Dictionary<int, CardInfo>();
 
     //手札オブジェクト
-    //public List<GameObject> handCardObjectList = new List<GameObject>();
     Dictionary<int, GameObject> handCardObjectDict = new Dictionary<int, GameObject>();
     /// <summary>
     /// 手札枚数毎のカードそれぞれのpositionとrotationのキャッシュ
@@ -23,6 +20,7 @@ public class HandManager : MonoBehaviour
     /// </summary>
     Dictionary<int, Dictionary<int, pos_rot>> handNumLocalPosRotCache = new Dictionary<int, Dictionary<int, pos_rot>>();
 
+    [HideInInspector]
     public GameObject bigDisplayHandObject = null;
 
     class pos_rot
@@ -39,12 +37,6 @@ public class HandManager : MonoBehaviour
 
     public bool draggingBool = false;
 
-    private void Awake()
-    {
-        codeCardGameManager = GetComponent<CardGameManager>();
-        codeCardLayoutGroup = CardLayout.GetComponent<CardLayoutGroup>();
-        codeHandAreaRectTransform = HandArea.GetComponent<RectTransform>();
-    }
 
     public Dictionary<int, CardInfo> GetHandDict()
     {
@@ -153,13 +145,52 @@ public class HandManager : MonoBehaviour
         handDict.Remove(card.id);
 
         GameObject cardObject = handCardObjectDict[cardNum];
-        cardObject.transform.parent = HandArea.transform;
+        cardObject.transform.parent = CardLayout.transform.parent.transform;
         handCardObjectDict.Remove(cardNum);
 
         //演出
         Destroy(cardObject);
 
         codeCardGameManager.CardPlay(card);
+        HandLayoutCalclate();
+    }
+
+    public bool IsSelecting()
+    {
+        return codeCardGameManager.selectingBool;
+    }
+    public void SelectedHandObject(int cardId)
+    {
+        if (codeCardGameManager.selectedCardIdHash.Contains(cardId))
+        {
+            codeCardGameManager.selectedCardIdHash.Remove(cardId);
+        }
+        else
+        {
+            codeCardGameManager.selectedCardIdHash.Add(cardId);
+        }
+    }
+
+    public IEnumerator DiscardHand(int num)
+    {
+        //指定枚数分を選ぶ
+        yield return codeCardGameManager.SelectCheck(num);
+        HashSet<int> CardIdHash = codeCardGameManager.selectedCardIdHash;
+        //捨て札へ
+        foreach (int selectedHandId in CardIdHash)
+        {
+            CardInfo card = handDict[selectedHandId];
+            handDict.Remove(selectedHandId);
+            codeCardGameManager.GotoTrash(card);
+
+            GameObject cardObject = handCardObjectDict[selectedHandId];
+            cardObject.transform.parent = CardLayout.transform.parent.transform;
+            handCardObjectDict.Remove(selectedHandId);
+
+            //演出
+            Destroy(cardObject);
+        }
+        codeCardGameManager.SelectedHashClear();
         HandLayoutCalclate();
     }
 }

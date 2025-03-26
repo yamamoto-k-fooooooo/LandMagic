@@ -7,5 +7,8 @@
 /obj
 /Logs
 /Library
-/Assets
 /Assembly-CSharp-Editor.csproj
+Assets/Script/GameMng.cs
+Assets/Script/GameMng.cs.meta
+Assets/Script/SoundManager.cs
+Assets/Script/SoundManager.cs.meta

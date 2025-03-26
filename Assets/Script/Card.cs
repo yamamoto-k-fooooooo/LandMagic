@@ -42,7 +42,7 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
     {
         cardLocalScale = transform.localScale;
         codeCardInfo = card;
-        codeHandManager = GameObject.Find("CardGameManager").GetComponent<HandManager>();
+        codeHandManager = GameObject.FindGameObjectWithTag("CardGameManager").GetComponent<HandManager>();
         codeRectTransform = GetComponent<RectTransform>();
         codeCardLayoutRectTransform = codeRectTransform.parent as RectTransform;
     }
@@ -155,12 +155,16 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
     // ドラッグ終了時の処理
     public void OnEndDrag(PointerEventData eventData)
     {
+        codeHandManager.draggingBool = false;
         if (playedBool)
         {
             return;
         }
-        codeHandManager.draggingBool = false;
-
+        else if (codeHandManager.IsSelecting())
+        {
+            CardRevertDisplay();
+            return;
+        }
         // eventData.positionから、親に従うlocalPositionへの変換を行う
         // オブジェクトの位置をlocalPositionに変更する
         Vector2 localPosition = GetLocalPosition(eventData.position);
@@ -179,5 +183,15 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
     public void OnBeginDrag(PointerEventData eventData)
     {
         codeHandManager.draggingBool = true;
+    }
+
+    //EventTrigger > PointerClickで呼ぶ
+    public void Selecterd()
+    {
+        if (codeHandManager.IsSelecting() && !codeHandManager.draggingBool)
+        {
+            Debug.Log("selected, " + codeCardInfo.id);
+            codeHandManager.SelectedHandObject(codeCardInfo.id);
+        }
     }
 }
