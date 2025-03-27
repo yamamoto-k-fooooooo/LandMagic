@@ -191,17 +191,16 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
     {
         if (codeHandManager.IsSelecting() && !codeHandManager.draggingBool)
         {
-            //フェードさせる
+            //オレンジ色に点滅させる
             if (codeHandManager.SelectedHandObject(codeCardInfo.id))
             {
-                codeImage.DOFade(0.7f, 0.5f).SetLoops(-1, LoopType.Yoyo);
+                codeImage.DOColor(new Color(1, 144/255f, 0), 0.5f).SetLoops(-1, LoopType.Yoyo);
             }
             //フェードを戻す
             else
             {
                 codeImage.DOKill();
-                var color = codeImage.color;
-                codeImage.color = new Color(color.r, color.g, color.b, 1);
+                codeImage.color = Color.white;
             }
         }
     }

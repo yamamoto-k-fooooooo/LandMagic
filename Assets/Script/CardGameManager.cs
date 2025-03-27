@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Linq;
+using DG.Tweening;
+using TMPro;
 
 public class CardGameManager : MonoBehaviour
 {
@@ -21,10 +23,17 @@ public class CardGameManager : MonoBehaviour
         green
     }
 
+    //手札のカード
     [SerializeField] GameObject handCardObject;
+    [SerializeField] Sprite[] uiCardMaterials;
+    //カラー毎のフィールド
     [SerializeField] GameObject[] ColorArea;
+    //ステージに出すカード
     [SerializeField] GameObject stageCardObject;
-    [SerializeField] Material[] colorMaterial;
+    [SerializeField] Material[] stageCardMaterial;
+    //カード一覧表
+    [SerializeField] GameObject CardListDisplay;
+    [SerializeField] TextMeshProUGUI[] codeCardListText;
 
     //デッキ
     List<CardInfo> deckList = new List<CardInfo>();
@@ -135,32 +144,31 @@ public class CardGameManager : MonoBehaviour
         GameObject makingCard = Instantiate(handCardObject, Vector3.zero, Quaternion.identity);
 
         Image image = makingCard.GetComponent<Image>();
+        image.sprite = uiCardMaterials[cardInfo.cardType];
+
+#if DEBUG && UNITY_EDITOR
         string name = "";
         //色を変更
         switch (cardInfo.cardType)
         {
             case (int)CardType.white:
-                image.color = new Color(1, 1, 150/255f, 1);
                 name = "_white";
                 break;
             case (int)CardType.blue:
-                image.color = new Color(100/255f, 1, 1, 1);
                 name = "_blue";
                 break;
             case (int)CardType.black:
-                image.color = new Color(135/255f, 135/255f, 135/255f, 1);
                 name = "_black";
                 break;
             case (int)CardType.red:
-                image.color = new Color(1, 100/255f, 100/255f, 1);
                 name = "_red";
                 break;
             case (int)CardType.green:
-                image.color = new Color(100/255f, 1, 100/255f, 1);
                 name = "_green";
                 break;
         }
         makingCard.name += name;
+#endif
 
         return makingCard;
     }
@@ -176,12 +184,11 @@ public class CardGameManager : MonoBehaviour
         {
             makingCard = Instantiate(stageCardObject, Vector3.zero, Quaternion.identity, parent.transform);
         }
+        //マテリアル(イラスト)を変更
+        makingCard.GetComponent<MeshRenderer>().material = stageCardMaterial[cardInfo.cardType];
 
-        makingCard.GetComponent<MeshRenderer>().material = colorMaterial[cardInfo.cardType];
-
-#if DEBUG
+#if DEBUG && UNITY_EDITOR
         string name = "";
-        //色を変更
         switch (cardInfo.cardType)
         {
             case (int)CardType.white:
@@ -255,6 +262,7 @@ public class CardGameManager : MonoBehaviour
         DoCardEffect(color);
     }
 
+    //ETB効果の実行
     void DoCardEffect(int color)
     {
         switch (color)
@@ -274,6 +282,23 @@ public class CardGameManager : MonoBehaviour
                 Draw(1);
                 break;
         }
+    }
+
+
+    public void OpenCardListDisplay(Dictionary<int, List<CardInfo>> type_cardInfoDict)
+    {
+        CardListDisplay.SetActive(true);
+        CardListDisplay.transform.localScale = Vector3.zero;
+
+        //カード毎の枚数を更新
+        //foreachでcardType毎に枚数を数える
+        foreach(int key in type_cardInfoDict.Keys)
+        {
+            codeCardListText[key].text = $"{type_cardInfoDict[key].Count}";
+        }
+
+        //アニメーション
+        CardListDisplay.transform.DOScale(Vector3.one, 0.1f);
     }
 
     /// <summary>
@@ -303,11 +328,13 @@ public class CardGameManager : MonoBehaviour
         selectedCardIdHash.Clear();
     }
 
+    //手札を〇枚捨てる
     void DiscardHand(int num)
     {
         StartCoroutine(codeHandManager.DiscardHand(num));
     }
 
+    //捨て札にカードを送る
     public void GotoTrash(CardInfo card)
     {
         var cardObject = StageObjectInstantiate(card);
